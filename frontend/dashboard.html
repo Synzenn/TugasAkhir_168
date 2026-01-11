@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MovieX Pro - Home</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #3b82f6; }
+        .modal-open { overflow: hidden; }
+        .nav-active { color: #3b82f6; border-bottom: 2px solid #3b82f6; padding-bottom: 4px; }
+    </style>
+</head>
+<body class="bg-[#0f172a] text-slate-200 min-h-screen font-sans">
+
+    <nav class="bg-slate-900/80 backdrop-blur-md p-4 sticky top-0 z-50 border-b border-slate-800">
+        <div class="container mx-auto flex flex-wrap justify-between items-center gap-4">
+            <div class="flex items-center gap-8">
+                <h1 class="text-3xl font-extrabold bg-gradient-to-r from-blue-500 to-cyan-400 bg-clip-text text-transparent cursor-pointer" onclick="location.reload()">MovieX</h1>
+                <div class="hidden lg:flex items-center gap-6 text-sm font-semibold text-slate-300">
+                    <button id="nav-movies" onclick="changeCategory('popular')" class="nav-link nav-active hover:text-blue-400 transition">Movies</button>
+                    <button id="nav-tv" onclick="fetchTVShows()" class="nav-link hover:text-blue-400 transition">TV Shows</button>
+                    <button id="nav-people" onclick="fetchPeople()" class="nav-link hover:text-blue-400 transition">People</button>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-5">
+                <div class="flex items-center gap-2 bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-700 text-xs font-bold">
+                    <i class="fas fa-globe text-blue-400"></i>
+                    <select id="lang-select" onchange="changeLanguage()" class="bg-transparent outline-none cursor-pointer text-white">
+                        <option value="en-US" class="bg-slate-800">EN</option>
+                        <option value="id-ID" class="bg-slate-800">ID</option>
+                    </select>
+                </div>
+
+                <button onclick="surpriseMe()" class="hidden lg:flex items-center gap-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 px-4 py-1.5 rounded-full text-xs font-bold transition-all shadow-lg text-white">
+                    <i class="fas fa-magic"></i> Surprise Me!
+                </button>
+
+                <a href="wishlist.html" class="relative hover:text-blue-400 transition flex items-center gap-1">
+                    <i class="fas fa-heart text-red-500"></i>
+                    <span id="wishlist-count" class="absolute -top-2 -right-3 bg-red-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full border-2 border-slate-900 hidden">0</span>
+                </a>
+                
+                <div class="relative">
+                    <button onclick="toggleProfileMenu()" class="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 p-1 pr-3 rounded-full border border-slate-700 transition">
+                        <div class="w-8 h-8 bg-gradient-to-tr from-blue-600 to-cyan-400 rounded-full flex items-center justify-center font-bold text-white uppercase" id="avatar-letter">U</div>
+                        <span class="text-sm font-medium hidden sm:block" id="nav-username">User</span>
+                    </button>
+                    <div id="profile-menu" class="hidden absolute right-0 mt-3 w-64 bg-slate-800 border border-slate-700 rounded-xl shadow-2xl overflow-hidden z-[100]">
+                        <div class="p-4 border-b border-slate-700 bg-slate-800/50 text-xs text-left">
+                            <p class="text-slate-400">Logged in as</p>
+                            <p class="font-bold text-white truncate" id="menu-full-username">Username</p>
+                        </div>
+                        <div class="p-2 text-slate-300 text-left">
+                            <button onclick="openProfileModal()" class="w-full text-left px-4 py-2 text-sm hover:bg-slate-700 rounded-lg flex items-center gap-3 transition">
+                                <i class="fas fa-user-circle text-blue-400"></i> My Profile
+                            </button>
+                            <button onclick="logout()" class="w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-red-400/10 rounded-lg flex items-center gap-3 transition">
+                                <i class="fas fa-sign-out-alt"></i> Logout
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mx-auto mt-8 px-4">
+        <div class="flex flex-col md:flex-row justify-between items-center gap-4 mb-8">
+            <div class="relative flex-1 max-w-md w-full">
+                <input type="text" id="search-input" placeholder="Search movies, tv, people..." class="w-full bg-slate-800 border-none rounded-full py-2.5 px-6 focus:ring-2 focus:ring-blue-500 outline-none text-sm text-white">
+                <button onclick="searchMovies()" class="absolute right-4 top-2.5 text-slate-400"><i class="fas fa-search"></i></button>
+            </div>
+            <select id="genre-select" onchange="filterByGenre()" class="bg-slate-800 rounded-lg p-2.5 text-sm outline-none w-full md:w-48 text-white">
+                <option value="">All Genres</option>
+            </select>
+        </div>
+
+        <h2 id="grid-title" class="text-2xl font-bold mb-6 flex items-center gap-2">
+            <span class="w-2 h-8 bg-blue-600 rounded-full"></span> Popular Movies
+        </h2>
+
+        <div id="movie-grid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 gap-6 mb-12"></div>
+    </div>
+
+    <div id="modal" class="hidden fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm" onclick="closeModal()">
+        <div id="modal-content" class="bg-slate-900 w-full max-w-4xl rounded-2xl overflow-hidden shadow-2xl z-50" onclick="event.stopPropagation()"></div>
+    </div>
+
+    <div id="profile-modal" class="hidden fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md">
+        <div class="bg-slate-900 border border-slate-700 w-full max-w-md rounded-2xl shadow-2xl overflow-hidden p-6 text-center">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-xl font-bold text-white">Profile Settings</h2>
+                <button onclick="closeProfileModal()" class="text-slate-400 hover:text-white"><i class="fas fa-times text-xl"></i></button>
+            </div>
+            <div class="w-20 h-20 bg-blue-600 rounded-full flex items-center justify-center text-3xl font-bold mx-auto mb-3 shadow-lg shadow-blue-500/20 text-white" id="profile-avatar-big">U</div>
+            <h3 class="text-lg font-bold text-white mb-6" id="profile-username-text">Username</h3>
+            
+            <div class="text-left space-y-4">
+                <label class="text-[10px] text-slate-500 uppercase font-bold tracking-widest text-white">Your API Key</label>
+                <div class="flex gap-2">
+                    <input type="text" id="profile-api-key" readonly class="flex-1 bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm font-mono text-yellow-500 outline-none select-all">
+                    <button onclick="copyApiKey()" class="bg-blue-600 px-4 rounded-lg hover:bg-blue-500 text-white font-bold text-xs transition">COPY</button>
+                </div>
+                <button onclick="regenerateApiKey()" class="w-full bg-slate-700 hover:bg-slate-600 py-3 rounded-xl font-bold text-sm transition-all text-white">
+                    <i class="fas fa-sync-alt"></i> Regenerate API Key
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="config.js"></script>
+    <script>
+        const TMDB_KEY = CONFIG.TMDB_KEY;
+        const BACKEND_URL = CONFIG.BACKEND_URL;
+        const userApiKey = localStorage.getItem('userApiKey');
+        const username = localStorage.getItem('username') || 'Guest';
+        let currentLang = 'en-US';
+
+        if (!userApiKey) window.location.href = 'index.html';
+
+        // Init UI
+        document.getElementById('nav-username').innerText = username;
+        document.getElementById('avatar-letter').innerText = username.charAt(0).toUpperCase();
+        document.getElementById('menu-full-username').innerText = username;
+
+        // --- CORE FUNCTIONS ---
+        function setActiveNav(id) {
+            document.querySelectorAll('.nav-link').forEach(link => link.classList.remove('nav-active'));
+            if(document.getElementById(id)) document.getElementById(id).classList.add('nav-active');
+        }
+
+        function toggleProfileMenu() { document.getElementById('profile-menu').classList.toggle('hidden'); }
+        function closeProfileModal() { document.getElementById('profile-modal').classList.add('hidden'); }
+        
+        function copyApiKey() {
+            const input = document.getElementById('profile-api-key');
+            input.select();
+            navigator.clipboard.writeText(input.value);
+            alert("API Key Berhasil Disalin!");
+        }
+
+        async function openProfileModal() {
+            const res = await fetch(`${BACKEND_URL}/wishlist`, { headers: { 'Authorization': userApiKey } });
+            const data = await res.json();
+            document.getElementById('profile-username-text').innerText = username;
+            document.getElementById('profile-avatar-big').innerText = username.charAt(0).toUpperCase();
+            document.getElementById('profile-api-key').value = userApiKey;
+            document.getElementById('profile-modal').classList.remove('hidden');
+            document.getElementById('profile-menu').classList.add('hidden');
+        }
+
+        async function regenerateApiKey() {
+            if(!confirm("Akses lama akan mati. Hasilkan baru?")) return;
+            const res = await fetch(`${BACKEND_URL}/user/regenerate-key`, {
+                method: 'POST',
+                headers: { 'Authorization': userApiKey }
+            });
+            const data = await res.json();
+            if(res.ok) {
+                localStorage.setItem('userApiKey', data.newApiKey);
+                location.reload();
+            }
+        }
+
+        // --- DATA FETCHING ---
+        async function fetchMovies(url, title, navId) {
+            setActiveNav(navId);
+            document.getElementById('grid-title').innerHTML = `<span class="w-2 h-8 bg-blue-600 rounded-full"></span> ${title}`;
+            const container = document.getElementById('movie-grid');
+            container.innerHTML = '<div class="col-span-full text-center py-20 text-slate-500 italic">Fetching data...</div>';
+            
+            const res = await fetch(`${url}&language=${currentLang}`);
+            const data = await res.json();
+            container.innerHTML = '';
+
+            data.results.forEach(m => {
+                if (!m.poster_path && !m.profile_path) return;
+                const img = m.poster_path || m.profile_path;
+                const name = m.title || m.name;
+                let action = m.title ? `showDetail('${m.id}', 'movie')` : (m.first_air_date ? `showDetail('${m.id}', 'tv')` : `showPersonDetail('${m.id}')`);
+
+                container.innerHTML += `
+                    <div class="group relative bg-slate-800 rounded-xl overflow-hidden cursor-pointer shadow-lg hover:shadow-blue-500/20 transition-all duration-300" onclick="${action}">
+                        <img src="https://image.tmdb.org/t/p/w500${img}" class="w-full h-80 object-cover group-hover:scale-105 transition duration-500">
+                        <div class="absolute inset-0 bg-gradient-to-t from-slate-950 p-4 flex flex-col justify-end opacity-0 group-hover:opacity-100 transition">
+                             <h3 class="font-bold text-sm text-white">${name}</h3>
+                             ${m.vote_average ? `<p class="text-xs text-blue-400">⭐ ${m.vote_average.toFixed(1)}</p>` : ''}
+                        </div>
+                    </div>`;
+            });
+        }
+
+        // --- DETAIL HANDLERS ---
+        async function checkIfInWishlist(movieId) {
+            try {
+                const res = await fetch(`${BACKEND_URL}/wishlist`, { headers: { 'Authorization': userApiKey } });
+                const wishlist = await res.json();
+                return wishlist.some(item => item.movieId == movieId);
+            } catch (err) { return false; }
+        }
+
+        async function showDetail(id, type = 'movie') {
+            const res = await fetch(`https://api.themoviedb.org/3/${type}/${id}?api_key=${TMDB_KEY}&language=${currentLang}&append_to_response=videos`);
+            const m = await res.json();
+            const isInWishlist = await checkIfInWishlist(id);
+
+            const year = (m.release_date || m.first_air_date) ? `(${new Date(m.release_date || m.first_air_date).getFullYear()})` : '';
+            const title = m.title || m.name;
+            const trailer = m.videos?.results.find(v => v.type === 'Trailer' && v.site === 'YouTube');
+
+            const wishlistBtn = isInWishlist 
+                ? `<div class="w-full bg-slate-800 text-yellow-500 py-4 rounded-2xl font-bold flex items-center justify-center gap-2 border border-yellow-500/30 mb-6"><i class="fas fa-check-circle"></i> In Wishlist</div>`
+                : `<button onclick="addToWishlist('${m.id}', '${title.replace(/'/g, "")}', '${m.poster_path}', '${type}')" class="w-full bg-blue-600 hover:bg-blue-500 py-4 rounded-2xl font-bold transition-all shadow-lg mb-6 text-white"><i class="fas fa-bookmark"></i> Save to Wishlist</button>`;
+
+            document.getElementById('modal-content').innerHTML = `
+                <div class="flex flex-col md:flex-row max-h-[90vh] overflow-y-auto bg-slate-900 text-left">
+                    <div class="md:w-1/3 bg-slate-950/50 flex items-center justify-center p-6 border-r border-slate-800">
+                        <img src="https://image.tmdb.org/t/p/w500${m.poster_path}" class="w-full rounded-lg shadow-2xl object-contain border border-slate-700">
+                    </div>
+                    <div class="p-8 md:w-2/3">
+                        <div class="flex justify-between items-start mb-4">
+                            <h2 class="text-3xl font-extrabold text-white">${title} <span class="text-slate-500 font-medium">${year}</span></h2>
+                            <button onclick="closeModal()" class="text-slate-400 hover:text-white p-2"><i class="fas fa-times text-xl"></i></button>
+                        </div>
+                        <p class="text-slate-400 text-sm leading-relaxed mb-8">${m.overview || 'No synopsis available.'}</p>
+                        ${wishlistBtn}
+                        ${trailer ? `<iframe class="w-full aspect-video rounded-xl shadow-2xl" src="https://www.youtube.com/embed/${trailer.key}?autoplay=1&mute=1" frameborder="0" allowfullscreen></iframe>` : ''}
+                    </div>
+                </div>`;
+            document.getElementById('modal').classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+
+        async function showPersonDetail(id) {
+            const res = await fetch(`https://api.themoviedb.org/3/person/${id}?api_key=${TMDB_KEY}&language=${currentLang}&append_to_response=combined_credits`);
+            const p = await res.json();
+            const knownFor = p.combined_credits.cast.sort((a, b) => b.popularity - a.popularity).slice(0, 5).map(m => m.title || m.name).join(', ');
+
+            document.getElementById('modal-content').innerHTML = `
+                <div class="flex flex-col md:flex-row max-h-[90vh] overflow-y-auto bg-slate-900 text-left">
+                    <div class="md:w-1/3 bg-slate-950/50 flex items-center justify-center p-6 border-r border-slate-800">
+                        <img src="https://image.tmdb.org/t/p/w500${p.profile_path}" class="w-full rounded-lg shadow-2xl object-contain border border-slate-700">
+                    </div>
+                    <div class="p-8 md:w-2/3 text-white">
+                        <div class="flex justify-between items-start mb-6">
+                            <div><h2 class="text-3xl font-extrabold">${p.name}</h2><p class="text-blue-400 text-sm font-medium mt-1">${p.known_for_department}</p></div>
+                            <button onclick="closeModal()" class="text-slate-400 hover:text-white p-2"><i class="fas fa-times text-xl"></i></button>
+                        </div>
+                        <p class="text-slate-400 text-sm leading-relaxed mb-6">${p.biography || 'Biography not available.'}</p>
+                        <h3 class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 font-mono">Top Credits</h3>
+                        <p class="text-blue-400/80 text-sm italic">${knownFor}</p>
+                    </div>
+                </div>`;
+            document.getElementById('modal').classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+
+        // --- MENU ACTIONS ---
+        function changeCategory(cat) { fetchMovies(`https://api.themoviedb.org/3/movie/${cat}?api_key=${TMDB_KEY}`, cat.toUpperCase(), 'nav-movies'); }
+        async function fetchTVShows() { fetchMovies(`https://api.themoviedb.org/3/tv/popular?api_key=${TMDB_KEY}`, 'Popular TV Shows', 'nav-tv'); }
+        async function fetchPeople() { fetchMovies(`https://api.themoviedb.org/3/person/popular?api_key=${TMDB_KEY}`, 'Popular People', 'nav-people'); }
+
+        async function changeLanguage() {
+            currentLang = document.getElementById('lang-select').value;
+            loadGenres(); // Refresh genre names
+            changeCategory('popular'); // Refresh movies with new lang
+        }
+
+        async function surpriseMe() {
+            const randomPage = Math.floor(Math.random() * 50) + 1;
+            const res = await fetch(`https://api.themoviedb.org/3/movie/top_rated?api_key=${TMDB_KEY}&page=${randomPage}`);
+            const data = await res.json();
+            const randomMovie = data.results[Math.floor(Math.random() * data.results.length)];
+            showDetail(randomMovie.id, 'movie');
+        }
+
+        async function loadGenres() {
+            const res = await fetch(`https://api.themoviedb.org/3/genre/movie/list?api_key=${TMDB_KEY}&language=${currentLang}`);
+            const data = await res.json();
+            const select = document.getElementById('genre-select');
+            select.innerHTML = '<option value="">All Genres</option>';
+            data.genres.forEach(g => select.innerHTML += `<option value="${g.id}">${g.name}</option>`);
+        }
+
+        function filterByGenre() {
+            const id = document.getElementById('genre-select').value;
+            if (id) fetchMovies(`https://api.themoviedb.org/3/discover/movie?api_key=${TMDB_KEY}&with_genres=${id}`, "Genre Filter", 'nav-movies');
+            else changeCategory('popular');
+        }
+
+        async function searchMovies() {
+            const q = document.getElementById('search-input').value;
+            if (q) fetchMovies(`https://api.themoviedb.org/3/search/multi?api_key=${TMDB_KEY}&query=${q}`, `Results for "${q}"`, 'nav-movies');
+        }
+
+        async function addToWishlist(movieId, title, posterPath, type) {
+            const res = await fetch(`${BACKEND_URL}/wishlist`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': userApiKey },
+                body: JSON.stringify({ movieId, title, posterPath }) 
+            });
+            if (res.ok) { alert("Saved!"); updateWishlistCount(); showDetail(movieId, type); }
+        }
+
+        async function updateWishlistCount() {
+            try {
+                const res = await fetch(`${BACKEND_URL}/wishlist`, { headers: { 'Authorization': userApiKey } });
+                const data = await res.json();
+                const badge = document.getElementById('wishlist-count');
+                if (data.length > 0) { badge.innerText = data.length; badge.classList.remove('hidden'); }
+                else badge.classList.add('hidden');
+            } catch(e) {}
+        }
+
+        function closeModal() {
+            document.getElementById('modal').classList.add('hidden');
+            document.getElementById('modal-content').innerHTML = "";
+            document.body.style.overflow = 'auto';
+        }
+
+        function logout() { localStorage.clear(); window.location.href = 'index.html'; }
+
+        // Start
+        loadGenres();
+        changeCategory('popular');
+        updateWishlistCount();
+    </script>
+</body>
+</html>

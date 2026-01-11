@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TMDB Web - Login</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-900 text-white flex items-center justify-center min-h-screen">
+
+    <div class="bg-gray-800 p-8 rounded-xl shadow-2xl w-full max-w-md">
+        <h2 id="auth-title" class="text-3xl font-bold mb-6 text-center text-blue-500">Login</h2>
+        
+        <form id="auth-form" class="space-y-4">
+            <div>
+                <label class="block text-sm mb-1">Username</label>
+                <input type="text" id="username" class="w-full p-2.5 rounded bg-gray-700 border border-gray-600 focus:border-blue-500 outline-none" required>
+            </div>
+            <div>
+                <label class="block text-sm mb-1">Password</label>
+                <input type="password" id="password" class="w-full p-2.5 rounded bg-gray-700 border border-gray-600 focus:border-blue-500 outline-none" required>
+            </div>
+            <div id="role-selection" class="hidden">
+                <label class="block text-sm mb-1">Daftar Sebagai</label>
+                <select id="role" class="w-full p-2.5 rounded bg-gray-700 border border-gray-600 outline-none">
+                    <option value="user">User Biasa</option>
+                    <option value="admin">Admin</option>
+                </select>
+            </div>
+            <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 py-3 rounded-lg font-semibold transition">Masuk</button>
+        </form>
+
+        <p class="mt-6 text-center text-gray-400 text-sm">
+            <span id="toggle-text">Belum punya akun?</span>
+            <button onclick="toggleAuth()" id="toggle-btn" class="text-blue-500 hover:underline">Daftar Sekarang</button>
+        </p>
+    </div>
+
+    <script src="config.js"></script>
+
+    <script>
+    let isLogin = true;
+
+    // Fungsi untuk ganti tampilan Login/Register
+    function toggleAuth() {
+        isLogin = !isLogin;
+        document.getElementById('auth-title').innerText = isLogin ? 'Login' : 'Register';
+        document.getElementById('role-selection').classList.toggle('hidden');
+        document.getElementById('toggle-text').innerText = isLogin ? 'Belum punya akun?' : 'Sudah punya akun?';
+        document.getElementById('toggle-btn').innerText = isLogin ? 'Daftar Sekarang' : 'Login';
+    }
+
+    // Tangkap Form Submit
+    document.getElementById('auth-form').addEventListener('submit', async (e) => {
+        e.preventDefault(); 
+
+        const username = document.getElementById('username').value;
+        const password = document.getElementById('password').value;
+        const role = document.getElementById('role').value;
+
+        // 2. Gunakan CONFIG.BACKEND_URL dari file config.js
+        const endpoint = isLogin ? `${CONFIG.BACKEND_URL}/login` : `${CONFIG.BACKEND_URL}/register`;
+        
+        const payload = isLogin ? { username, password } : { username, password, role };
+
+        try {
+            const response = await fetch(endpoint, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                alert(isLogin ? "Login Berhasil!" : "Registrasi Berhasil!");
+                
+                localStorage.setItem('userApiKey', data.apiKey);
+                localStorage.setItem('userRole', data.role);
+                localStorage.setItem('username', data.username);
+                
+                // 3. Pastikan mengarah ke file .html agar tidak error di server 'serve'
+                if (data.role === 'admin') {
+                    window.location.href = 'admin.html';
+                } else {
+                    window.location.href = 'dashboard.html';
+                }
+            } else {
+                alert("Error: " + data.message);
+            }
+        } catch (error) {
+            console.error("Gagal terhubung ke backend:", error);
+            alert("Gagal terhubung ke API di alamat: " + CONFIG.BACKEND_URL);
+        }
+    });
+</script>
+</body>
+</html>

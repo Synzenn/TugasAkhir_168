@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Secure Wishlist - MovieX</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .line-clamp-2 {
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;  
+            overflow: hidden;
+        }
+    </style>
+</head>
+<body class="bg-[#0f172a] text-slate-200 min-h-screen font-sans">
+    <nav class="bg-slate-900 p-4 border-b border-slate-800 shadow-lg sticky top-0 z-50">
+        <div class="container mx-auto flex justify-between items-center">
+            <h1 class="text-2xl font-bold text-blue-500">My Secure Wishlist</h1>
+            <a href="dashboard.html" class="text-sm text-slate-400 hover:text-white transition flex items-center gap-2">
+                <i class="fas fa-arrow-left"></i> Kembali ke Dashboard
+            </a>
+        </div>
+    </nav>
+
+    <div class="container mx-auto mt-10 px-4">
+        <div id="api-validator" class="max-w-md mx-auto bg-slate-800 p-8 rounded-2xl shadow-2xl border border-slate-700">
+            <div class="text-center mb-6">
+                <div class="w-16 h-16 bg-slate-900 rounded-full flex items-center justify-center mx-auto mb-4 border border-yellow-500/50">
+                    <i class="fas fa-lock text-3xl text-yellow-500"></i>
+                </div>
+                <h2 class="text-xl font-bold text-white">Akses Terkunci</h2>
+                <p class="text-sm text-slate-400 mt-2">Masukkan API Key Anda untuk melihat daftar wishlist pribadi.</p>
+            </div>
+            <div class="space-y-4">
+                <input type="password" id="input-api-key" placeholder="Paste API Key Anda di sini..." 
+                    class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500 text-yellow-500 font-mono transition-all">
+                <button onclick="validateAndLoad()" class="w-full bg-blue-600 hover:bg-blue-700 py-3 rounded-xl font-bold transition transform active:scale-95 shadow-lg shadow-blue-600/20 text-white">
+                    Buka Wishlist
+                </button>
+                <p class="text-[10px] text-slate-500 text-center uppercase tracking-widest mt-2">Key dapat ditemukan di menu Profile Dashboard</p>
+            </div>
+        </div>
+
+        <div id="wishlist-content" class="hidden animate-in fade-in slide-in-from-bottom-5 duration-700">
+            <h2 class="text-2xl font-bold mb-8 flex items-center gap-3">
+                <span class="w-2 h-8 bg-red-600 rounded-full"></span> Koleksi Favorit Saya
+            </h2>
+            <div id="wishlist-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
+                </div>
+        </div>
+    </div>
+
+    <script src="config.js"></script>
+    <script>
+        async function validateAndLoad() {
+            const inputKey = document.getElementById('input-api-key').value;
+            const loginKey = localStorage.getItem('userApiKey');
+
+            if (!inputKey) {
+                alert("Masukkan API Key terlebih dahulu!");
+                return;
+            }
+
+            if (inputKey !== loginKey) {
+                alert("API Key tidak cocok!");
+                return;
+            }
+
+            try {
+                const res = await fetch(`${CONFIG.BACKEND_URL}/wishlist`, {
+                    headers: { 'Authorization': inputKey }
+                });
+                
+                if (res.ok) {
+                    const data = await res.json();
+                    renderWishlist(data);
+                    document.getElementById('api-validator').classList.add('hidden');
+                    document.getElementById('wishlist-content').classList.remove('hidden');
+                } else {
+                    alert("Gagal memverifikasi ke server.");
+                }
+            } catch (err) {
+                alert("Server Error! Periksa koneksi backend.");
+            }
+        }
+
+        function renderWishlist(data) {
+            const container = document.getElementById('wishlist-grid');
+            console.log("Data dari Database:", data); // Lihat di F12 Console, apakah posterPath ada isinya?
+            
+            container.innerHTML = data.length === 0 ? 
+                '<div class="col-span-full text-center py-20 text-slate-500">Belum ada film yang disimpan.</div>' : '';
+
+            data.forEach(item => {
+                // Gabungkan base URL TMDB dengan posterPath dari DB
+                const posterUrl = item.posterPath 
+                    ? `https://image.tmdb.org/t/p/w500${item.posterPath}` 
+                    : 'https://via.placeholder.com/500x750?text=No+Poster';
+
+                container.innerHTML += `
+                    <div class="group relative bg-slate-800 rounded-2xl overflow-hidden shadow-xl border border-slate-700 transition-all hover:scale-105 hover:border-blue-500">
+                        <div class="aspect-[2/3] w-full">
+                            <img src="${posterUrl}" alt="${item.title}" class="w-full h-full object-cover">
+                        </div>
+                        <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-900/60 p-4 flex flex-col justify-end opacity-0 group-hover:opacity-100 transition-opacity">
+                            <h3 class="font-bold text-sm text-white mb-3">${item.title}</h3>
+                            <button onclick="deleteWishlist(${item.id})" class="w-full bg-red-600 hover:bg-red-700 text-white py-2 rounded-lg text-xs font-bold transition">
+                                <i class="fas fa-trash-alt mr-1"></i> Hapus
+                            </button>
+                        </div>
+                    </div>`;
+            });
+        }
+        
+        async function deleteWishlist(id) {
+            const apiKey = localStorage.getItem('userApiKey');
+            if(confirm('Hapus film ini?')) {
+                try {
+                    const res = await fetch(`${CONFIG.BACKEND_URL}/wishlist/${id}`, {
+                        method: 'DELETE',
+                        headers: { 'Authorization': apiKey }
+                    });
+                    if(res.ok) validateAndLoad();
+                } catch (error) {
+                    alert("Gagal menghapus.");
+                }
+            }
+        }
+    </script>
+</body>
+</html>

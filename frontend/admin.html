@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel - MovieX Pro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans">
+
+    <div class="flex min-h-screen">
+        <aside class="w-64 bg-slate-900 text-slate-300 hidden md:flex flex-col">
+            <div class="p-6">
+                <h1 class="text-2xl font-extrabold text-white bg-gradient-to-r from-blue-400 to-cyan-300 bg-clip-text text-transparent">
+                    MovieX Admin
+                </h1>
+            </div>
+            <nav class="flex-1 px-4 space-y-2">
+                <a href="#" class="flex items-center gap-3 bg-blue-600 text-white px-4 py-3 rounded-xl transition">
+                    <i class="fas fa-users w-5"></i> Manajemen User
+                </a>
+                <a href="dashboard.html" class="flex items-center gap-3 hover:bg-slate-800 px-4 py-3 rounded-xl transition">
+                    <i class="fas fa-film w-5"></i> View Website
+                </a>
+            </nav>
+            <div class="p-6 border-t border-slate-800">
+                <button onclick="logout()" class="flex items-center gap-3 text-red-400 hover:text-red-300 transition w-full">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </button>
+            </div>
+        </aside>
+
+        <main class="flex-1">
+            <header class="bg-white border-b border-slate-200 p-4 sticky top-0 z-10">
+                <div class="container mx-auto flex justify-between items-center">
+                    <h2 class="font-semibold text-lg flex items-center gap-2">
+                        <i class="fas fa-bars md:hidden cursor-pointer"></i>
+                        Dashboard Overview
+                    </h2>
+                    <div class="flex items-center gap-4">
+                        <span class="text-sm text-slate-500 hidden sm:block" id="admin-name">Admin Name</span>
+                        <div class="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold">A</div>
+                    </div>
+                </div>
+            </header>
+
+            <div class="p-6 lg:p-10 space-y-8">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-slate-500 font-medium">Total Users</p>
+                            <h3 class="text-3xl font-bold mt-1" id="total-users">0</h3>
+                        </div>
+                        <div class="w-12 h-12 bg-blue-100 text-blue-600 rounded-xl flex items-center justify-center text-xl">
+                            <i class="fas fa-user-group"></i>
+                        </div>
+                    </div>
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-slate-500 font-medium">Total Admin</p>
+                            <h3 class="text-3xl font-bold mt-1" id="total-admins">0</h3>
+                        </div>
+                        <div class="w-12 h-12 bg-purple-100 text-purple-600 rounded-xl flex items-center justify-center text-xl">
+                            <i class="fas fa-user-shield"></i>
+                        </div>
+                    </div>
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-slate-500 font-medium">System Status</p>
+                            <h3 class="text-lg font-bold mt-1 text-green-500">Active</h3>
+                        </div>
+                        <div class="w-12 h-12 bg-green-100 text-green-600 rounded-xl flex items-center justify-center text-xl">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                    <div class="p-6 border-b border-slate-100 flex justify-between items-center bg-white">
+                        <h3 class="text-xl font-bold">Daftar Pengguna Sistem</h3>
+                        <button onclick="loadUsers()" class="text-blue-500 hover:rotate-180 transition-all duration-500">
+                            <i class="fas fa-sync-alt"></i>
+                        </button>
+                    </div>
+                    
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left">
+                            <thead>
+                                <tr class="bg-slate-50 text-slate-500 text-xs uppercase tracking-wider">
+                                    <th class="px-6 py-4 font-semibold">ID</th>
+                                    <th class="px-6 py-4 font-semibold">User Info</th>
+                                    <th class="px-6 py-4 font-semibold">Role</th>
+                                    <th class="px-6 py-4 font-semibold">Internal API Key</th>
+                                    <th class="px-6 py-4 font-semibold text-center">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="user-table-body" class="divide-y divide-slate-100"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="config.js"></script>
+    <script>
+        // Gunakan URL dari file config
+        const API_URL = `${CONFIG.BACKEND_URL}/admin/users`;
+        
+        // Proteksi Halaman Admin
+        if (localStorage.getItem('userRole') !== 'admin') {
+            alert("Akses Ditolak! Anda bukan Admin.");
+            window.location.href = 'index.html';
+        }
+
+        document.getElementById('admin-name').innerText = localStorage.getItem('username');
+
+        async function loadUsers() {
+            try {
+                const response = await fetch(API_URL);
+                const users = await response.json();
+                
+                const tableBody = document.getElementById('user-table-body');
+                tableBody.innerHTML = ''; 
+
+                let admins = 0;
+                users.forEach(user => { if(user.role === 'admin') admins++; });
+                document.getElementById('total-users').innerText = users.length;
+                document.getElementById('total-admins').innerText = admins;
+
+                users.forEach(user => {
+                    tableBody.innerHTML += `
+                        <tr class="hover:bg-slate-50 transition">
+                            <td class="px-6 py-4 text-sm font-medium text-slate-400">#${user.id}</td>
+                            <td class="px-6 py-4">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-8 h-8 bg-slate-200 rounded-full flex items-center justify-center font-bold text-slate-600 text-xs">
+                                        ${user.username.charAt(0).toUpperCase()}
+                                    </div>
+                                    <span class="font-semibold text-slate-700">${user.username}</span>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4">
+                                <span class="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                                    user.role === 'admin' 
+                                    ? 'bg-purple-100 text-purple-600' 
+                                    : 'bg-blue-100 text-blue-600'
+                                }">
+                                    ${user.role}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4">
+                                <div class="flex items-center gap-2">
+                                    <code class="text-xs bg-slate-100 px-2 py-1 rounded text-slate-500 font-mono">
+                                        ${user.apiKey.substring(0, 15)}...
+                                    </code>
+                                    <button onclick="copyToClipboard('${user.apiKey}')" class="text-slate-400 hover:text-blue-500">
+                                        <i class="far fa-copy"></i>
+                                    </button>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 text-center">
+                                <button onclick="deleteUser(${user.id})" class="bg-red-50 text-red-500 hover:bg-red-500 hover:text-white w-8 h-8 rounded-lg transition flex items-center justify-center mx-auto">
+                                    <i class="fas fa-trash-alt text-sm"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                });
+            } catch (error) {
+                console.error("Gagal memuat data:", error);
+            }
+        }
+
+        async function deleteUser(id) {
+            if (confirm("Hapus pengguna ini secara permanen?")) {
+                try {
+                    const response = await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
+                    const result = await response.json();
+                    alert(result.message);
+                    loadUsers(); 
+                } catch (error) {
+                    alert("Gagal menghapus user");
+                }
+            }
+        }
+
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text);
+            alert("API Key dikopi ke clipboard!");
+        }
+
+        function logout() {
+            localStorage.clear();
+            window.location.href = 'index.html';
+        }
+
+        loadUsers();
+    </script>
+</body>
+</html>
