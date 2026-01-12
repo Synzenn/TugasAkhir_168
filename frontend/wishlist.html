@@ -64,14 +64,15 @@
                 return;
             }
 
-            if (inputKey !== loginKey) {
+            // Tips: Menggunakan trim() untuk menghindari error spasi yang tidak sengaja ter-copy
+            if (inputKey.trim() !== loginKey.trim()) {
                 alert("API Key tidak cocok!");
                 return;
             }
 
             try {
                 const res = await fetch(`${CONFIG.BACKEND_URL}/wishlist`, {
-                    headers: { 'Authorization': inputKey }
+                    headers: { 'Authorization': inputKey.trim() }
                 });
                 
                 if (res.ok) {
@@ -80,7 +81,7 @@
                     document.getElementById('api-validator').classList.add('hidden');
                     document.getElementById('wishlist-content').classList.remove('hidden');
                 } else {
-                    alert("Gagal memverifikasi ke server.");
+                    alert("Gagal memverifikasi ke server. Pastikan API Key aktif.");
                 }
             } catch (err) {
                 alert("Server Error! Periksa koneksi backend.");
@@ -89,25 +90,34 @@
 
         function renderWishlist(data) {
             const container = document.getElementById('wishlist-grid');
-            console.log("Data dari Database:", data); // Lihat di F12 Console, apakah posterPath ada isinya?
+            // Log ini sangat penting untuk melihat isi data sebenarnya dari MySQL
+            console.log("Data mentah dari server:", data);
             
             container.innerHTML = data.length === 0 ? 
                 '<div class="col-span-full text-center py-20 text-slate-500">Belum ada film yang disimpan.</div>' : '';
 
             data.forEach(item => {
-                // Gabungkan base URL TMDB dengan posterPath dari DB
-                const posterUrl = item.posterPath 
-                    ? `https://image.tmdb.org/t/p/w500${item.posterPath}` 
-                    : 'https://via.placeholder.com/500x750?text=No+Poster';
+                // CEK SEMUA KEMUNGKINAN: Sequelize sering mengubah case-sensitivity
+                const path = item.posterPath || item.poster_path || item.PosterPath; 
+                
+                // Gunakan gambar dummy lokal jika TMDB path tidak ada agar tidak memicu ERR_NAME_NOT_RESOLVED
+                const posterUrl = path 
+                    ? `https://image.tmdb.org/t/p/w500${path}` 
+                    : 'https://placehold.co/500x750?text=No+Poster'; // Alternatif selain via.placeholder
 
                 container.innerHTML += `
                     <div class="group relative bg-slate-800 rounded-2xl overflow-hidden shadow-xl border border-slate-700 transition-all hover:scale-105 hover:border-blue-500">
-                        <div class="aspect-[2/3] w-full">
-                            <img src="${posterUrl}" alt="${item.title}" class="w-full h-full object-cover">
+                        <div class="aspect-[2/3] w-full bg-slate-900">
+                            <img src="${posterUrl}" 
+                                alt="${item.title}" 
+                                class="w-full h-full object-cover"
+                                onload="this.style.opacity='1'"
+                                style="opacity:0; transition: opacity 0.5s;"
+                                onerror="this.src='https://placehold.co/500x750?text=Error+Image'">
                         </div>
-                        <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-900/60 p-4 flex flex-col justify-end opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-900/60 p-4 flex flex-col justify-end opacity-0 group-hover:opacity-100 transition-all duration-300">
                             <h3 class="font-bold text-sm text-white mb-3">${item.title}</h3>
-                            <button onclick="deleteWishlist(${item.id})" class="w-full bg-red-600 hover:bg-red-700 text-white py-2 rounded-lg text-xs font-bold transition">
+                            <button onclick="deleteWishlist(${item.id})" class="w-full bg-red-600 hover:bg-red-700 text-white py-2 rounded-lg text-xs font-bold transition shadow-lg">
                                 <i class="fas fa-trash-alt mr-1"></i> Hapus
                             </button>
                         </div>
@@ -115,15 +125,18 @@
             });
         }
         
+        // Fungsi hapus tetap sama namun dengan reload yang lebih halus
         async function deleteWishlist(id) {
             const apiKey = localStorage.getItem('userApiKey');
-            if(confirm('Hapus film ini?')) {
+            if(confirm('Hapus film ini dari koleksi?')) {
                 try {
                     const res = await fetch(`${CONFIG.BACKEND_URL}/wishlist/${id}`, {
                         method: 'DELETE',
                         headers: { 'Authorization': apiKey }
                     });
-                    if(res.ok) validateAndLoad();
+                    if(res.ok) {
+                        validateAndLoad(); // Memanggil ulang data terbaru
+                    }
                 } catch (error) {
                     alert("Gagal menghapus.");
                 }
